@@ -1,4 +1,5 @@
 import pandas as pd
+import json
 
 def get_marks_from_google_sheets(url):
     # Зчитуємо всі аркуші (sheet_name=None повертає словник {назва_аркуша: DataFrame})
@@ -42,20 +43,23 @@ def get_student_grades(data_dict, sheet_name, student_name):
             return df.loc[student_name].tolist()
     return None
 
+def convert_to_json(data_dict):
+    """Конвертує словник DataFrame-ів у формат JSON-рядка"""
+    json_ready_data = {}
+    for sheet_name, df in data_dict.items():
+        # orient='index' робить ПІБ студента ключем, а його оцінки — значеннями
+        json_ready_data[sheet_name] = df.to_dict(orient='index')
+    return json.dumps(json_ready_data, ensure_ascii=False, indent=4)
+
 if __name__ == "__main__":
     # Тестовий запуск
     marks_data = get_marks_from_google_sheets(url)
+
+    # 2. Експорт всієї таблиці в JSON
+    print("\nЕкспорт всієї таблиці в JSON...")
+    json_result = convert_to_json(marks_data)
     
-    # Ім'я студента для пошуку
-    target_student = "Білошапка Олександр"
-    print(f"Пошук оцінок для: {target_student}\n" + "="*30)
-    
-    found = False
-    for sheet_name in marks_data:
-        grades = get_student_grades(marks_data, sheet_name, target_student)
-        if grades:
-            print(f"Аркуш '{sheet_name}': {grades}")
-            found = True
-            
-    if not found:
-        print(f"Студента '{target_student}' не знайдено в жодній вкладці.")
+    # Збереження у файл
+    with open("marks.json", "w", encoding="utf-8") as f:
+        f.write(json_result)
+    print("Всі дані успішно збережено у файл 'marks.json'")
