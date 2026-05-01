@@ -81,6 +81,7 @@ async def show_deadlines(msg: types.Message):
     
     if not hot_tasks:
         response_text = "🎉 Наразі немає 'гарячих' дедлайнів! Можна відпочити."
+        await msg.answer(response_text)
     else:
         response_text = "🔥 УВАГА! ДЕДЛАЙНИ, ЩО ГОРЯТЬ! 🔥\n\n"
         for d in hot_tasks:
@@ -88,9 +89,10 @@ async def show_deadlines(msg: types.Message):
             day_word = "днів" if days > 1 else "день" if days == 1 else "сьогодні!"
             time_left = f"Залишилось: {days} {day_word}" if days > 0 else "Здати потрібно СЬОГОДНІ!"
             
-            response_text += f"📚 *{d['subject']}*\n📝 {d['task']}\n⏳ До: {d['due_date']} ({time_left})\n➖➖➖➖➖➖➖➖\n"
+            # Використовуємо HTML для жирного тексту
+            response_text += f"📚 <b>{d['subject']}</b>\n📝 {d['task']}\n⏳ До: {d['due_date']} ({time_left})\n➖➖➖➖➖➖➖➖\n"
             
-    await msg.answer(response_text, parse_mode="Markdown")
+    await msg.answer(response_text, parse_mode="HTML")
 
 @disp.message(Command("rating"))
 async def request_subject_for_rating(msg: types.Message, state: FSMContext):
@@ -102,21 +104,18 @@ async def request_subject_for_rating(msg: types.Message, state: FSMContext):
 async def process_subject_rating(msg: types.Message, state: FSMContext):
     """Обробка введеного предмета і виведення рейтингу (Код Ігоря)"""
     subject_name = msg.text.strip()
-    await state.clear() # Очищуємо стан
+    await state.clear() 
     
-    # Викликаємо функцію Ігоря для розрахунку рейтингу
     result = db_manager.get_subject_rating(subject_name)
 
     if isinstance(result, str):
-        # Якщо повернувся рядок - це помилка (немає такого предмета)
         await msg.answer(result)
     else:
-        # Успіх: формуємо красивий список
-        response_text = f"📊 *Рейтинг з предмета: {result['subject']}*\n\n"
+        response_text = f"📊 <b>Рейтинг з предмета: {result['subject']}</b>\n\n"
         for student, rating in result['ratings'].items():
             response_text += f"👤 {student}: {rating}\n"
             
-        await msg.answer(response_text, parse_mode="Markdown")
+        await msg.answer(response_text, parse_mode="HTML")
 
 
 # ==========================================
