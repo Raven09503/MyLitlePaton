@@ -1,5 +1,25 @@
 import pandas as pd
 import json
+#from individual_marks import calculate_student_average
+
+def calculate_student_average(data_dict, student_name):
+    """Вираховує середній бал студента по всіх аркушах (предметах)"""
+    results = {}
+    student_name = student_name.strip()
+    for sheet_name, df in data_dict.items():
+        if student_name in df.index:
+            row = df.loc[student_name]
+            # Якщо знайдено декілька рядків з однаковим іменем, беремо перший
+            if isinstance(row, pd.DataFrame):
+                row = row.iloc[0]
+                
+            # Перетворюємо рядок оцінок у числа, ігноруючи нечислові значення (вони стануть NaN)
+            grades = pd.to_numeric(row, errors='coerce')
+            avg = grades.mean()
+            if pd.notnull(avg):
+                results[sheet_name] = round(float(avg), 2)
+    return results
+
 
 def get_marks_from_google_sheets(url):
     # Зчитуємо всі аркуші (sheet_name=None повертає словник {назва_аркуша: DataFrame})
@@ -17,6 +37,8 @@ def get_marks_from_google_sheets(url):
         clean_df = clean_df.dropna(how='all', axis=0).dropna(how='all', axis=1)
         
         if not clean_df.empty:
+            # Очищуємо імена від зайвих пробілів перед встановленням індексу
+            clean_df.iloc[:, 0] = clean_df.iloc[:, 0].astype(str).str.strip()
             # 3. Встановлюємо перший стовпець (ПІБ) як індекс
             clean_df.set_index(clean_df.columns[0], inplace=True)
             
@@ -37,10 +59,16 @@ url = f"https://docs.google.com/spreadsheets/d/{spreadsheet_id}/export?format=xl
 
 # Приклад отримання оцінок конкретного студента:
 def get_student_grades(data_dict, sheet_name, student_name):
+    student_name = student_name.strip()
     if sheet_name in data_dict:
         df = data_dict[sheet_name]
         if student_name in df.index:
-            return df.loc[student_name].tolist()
+            row = df.loc[student_name]
+            # Якщо знайдено декілька рядків, беремо перший
+            if isinstance(row, pd.DataFrame):
+                row = row.iloc[0]
+                
+            return row.tolist()
     return None
 
 def convert_to_json(data_dict):
