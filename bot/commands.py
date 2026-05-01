@@ -1,5 +1,13 @@
+import sys
+import os
+# Додаємо головну папку в шлях, щоб бот бачив файли Ігоря (db_manager.py та sync_sheets.py)
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+import db_manager
+import sync_sheets
+
 from .settings import bot, disp
-from aiogram.filters import CommandStart
+from aiogram.filters import CommandStart, Command
 from aiogram import types, F
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
@@ -13,6 +21,7 @@ from .bot_modules.scheduler_logic import load_schedule_data, get_week_type, get_
 class StudentForm(StatesGroup):
     waiting_for_name = State()
     action_type = State()
+    waiting_for_subject_rating = State() # ДОДАНО СТАН ДЛЯ РЕЙТИНГУ ІГОРЯ
 
 @disp.message(CommandStart())
 async def start(msg: types.Message):
@@ -51,6 +60,68 @@ async def request_name_for_detailed(msg: types.Message, state: FSMContext):
     await state.set_state(StudentForm.waiting_for_name)
     await state.update_data(action_type="detailed")
     await msg.answer("Введіть ПІБ студента для отримання детальних оцінок:")
+
+
+# ==========================================
+# ДОДАНИЙ КОД ІГОРЯ ДЛЯ РОБОТИ З БАЗОЮ ДАНИХ
+# ==========================================
+
+@disp.message(Command("sync"))
+async def sync_database(msg: types.Message):
+    """Синхронізація бази даних з Google Таблиці (Код Ігоря)"""
+    await msg.answer("⏳ Завантажую дані з Google Таблиці... Це може зайняти кілька секунд.")
+    # Виклик функції парсингу Ігоря
+    sync_result = sync_sheets.sync_data()
+    await msg.answer(sync_result)
+
+@disp.message(Command("deadlines"))
+async def show_deadlines(msg: types.Message):
+    """Виведення гарячих дедлайнів (Код Ігоря)"""
+    hot_tasks = db_manager.get_hot_deadlines()
+    
+    if not hot_tasks:
+        response_text = "🎉 Наразі немає 'гарячих' дедлайнів! Можна відпочити."
+    else:
+        response_text = "🔥 УВАГА! ДЕДЛАЙНИ, ЩО ГОРЯТЬ! 🔥\n\n"
+        for d in hot_tasks:
+            days = d['days_left']
+            day_word = "днів" if days > 1 else "день" if days == 1 else "сьогодні!"
+            time_left = f"Залишилось: {days} {day_word}" if days > 0 else "Здати потрібно СЬОГОДНІ!"
+            
+            response_text += f"📚 *{d['subject']}*\n📝 {d['task']}\n⏳ До: {d['due_date']} ({time_left})\n➖➖➖➖➖➖➖➖\n"
+            
+    await msg.answer(response_text, parse_mode="Markdown")
+
+@disp.message(Command("rating"))
+async def request_subject_for_rating(msg: types.Message, state: FSMContext):
+    """Запит предмета для рейтингу (Код Ігоря)"""
+    await state.set_state(StudentForm.waiting_for_subject_rating)
+    await msg.answer("Введіть назву предмета, щоб дізнатися рейтинг групи (наприклад: ООП або Практика з БД):")
+
+@disp.message(StudentForm.waiting_for_subject_rating)
+async def process_subject_rating(msg: types.Message, state: FSMContext):
+    """Обробка введеного предмета і виведення рейтингу (Код Ігоря)"""
+    subject_name = msg.text.strip()
+    await state.clear() # Очищуємо стан
+    
+    # Викликаємо функцію Ігоря для розрахунку рейтингу
+    result = db_manager.get_subject_rating(subject_name)
+
+    if isinstance(result, str):
+        # Якщо повернувся рядок - це помилка (немає такого предмета)
+        await msg.answer(result)
+    else:
+        # Успіх: формуємо красивий список
+        response_text = f"📊 *Рейтинг з предмета: {result['subject']}*\n\n"
+        for student, rating in result['ratings'].items():
+            response_text += f"👤 {student}: {rating}\n"
+            
+        await msg.answer(response_text, parse_mode="Markdown")
+
+
+# ==========================================
+# ПРОДОВЖЕННЯ КОДУ САШІ (Обробка імен студентів)
+# ==========================================
 
 @disp.message(StudentForm.waiting_for_name)
 async def process_student_name(msg: types.Message, state: FSMContext):
