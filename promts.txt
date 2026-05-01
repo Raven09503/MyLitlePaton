@@ -1,3 +1,5 @@
+Промти Олександр Білошапка
+
 1 Напиши скрипт на Python, який зчитує дані з Google Таблиці за допомогою бібліотеки Pandas (через експорт посилання у форматі /export?format=xlsx).
 
 Врахуй особливості структури (згідно з файлом image_00fcfd.png):
@@ -58,3 +60,115 @@ Functional Requirements:
 
 7 Додай команди на те щоб отримати в чатботі всі оцінки, оцінки учня на вибір, та розклад
 8 Зроби щоб імя студента вводилось користувачем динамічно під час роботи програми після того як він натиснув кнопку
+
+
+
+
+Промти Макаренко Анастасія
+Create an advanced Admin Broadcast system using aiogram 3.x.
+
+Requirements:
+
+Admin Security:
+Define ADMIN_ID = 5416300111.
+Workflow:
+Command /broadcast starts a step-by-step process using FSM.
+Step 1: Admin selects the target using a keyboard with options: "Всім", "ПЗ-23-1/9", "КМП-23-1/9", "ПЗ-22-1/9".
+Step 2: Admin sends the message content.
+Broadcast Logic:
+If "Всім" is selected, send to every user in "groups.json".
+If a specific group is selected, filter users in "groups.json" and send only to those in that group.
+Message Design:
+Add a header "<b>📢 Повідомлення від адміністрації</b>".
+Use '–' instead of '—' in Ukrainian text.
+Code Style:
+No comments.
+Entire logic in English.
+Use aiogram Routers and match-case for handling targets.|
+
+
+
+
+
+Write a clean and modular Python code using the aiogram 3.x library for a Telegram bot feature. The goal is to implement a command /will_i_pass (or similar in Ukrainian) that predicts if a student will pass an exam or a session today.
+
+Requirements:
+
+Logic: Use the 'random' module to pick a response from a predefined list.
+Content: The responses should be "meme-like" and funny in Ukrainian. Include options like "Зірки кажуть так", "Тільки якщо виключиш Valorant", "Шанси як у викладача вийти на пенсію – мінімальні", "Можливо", etc.
+Code Style:
+No comments in the code.
+All variable names, function names, and logic must be in English.
+Use modern aiogram 3.x features (Routers, Dispatcher).
+Ensure the code is complete and ready to be integrated into a main bot file.
+Formatting: Use '–' instead of '—' in text strings.
+Create a simple group selection feature using aiogram 3.x.
+
+Requirements:
+1. Command: /group – when sent, the bot shows a ReplyKeyboardMarkup with group names: "ПЗ-23-1/9", "КМП-23-1/9", "ПЗ-22-1/9".
+2. Logic:
+   - Use a single message handler that filters for these specific group names.
+   - When a group is clicked, save the user's ID and the group name into "groups.json".
+   - If the user was already in the file, simply update their group.
+3. Storage: Use a JSON file named "groups.json".
+4. User Experience:
+   - Use 'one_time_keyboard=True' to hide the keyboard after selection.
+   - Use '–' instead of '—' in the response text.
+5. Code Style:
+   - No comments.
+   - All code logic in English.
+   - Use aiogram Routers.
+
+
+Промти Сокол
+Напиши модульний консольний додаток на Python (студентський трекер). Програма має складатися з 4 окремих файлів. Архітектура повинна відокремлювати логіку від інтерфейсу для подальшої міграції на Telegram-бота.
+
+Файл 1: data.json
+Згенеруй початкові дані у форматі JSON.
+
+deadlines: порожній масив [] (дедлайни будуть підтягуватися з таблиці).
+
+students: словники студентів. Імена: Ігор Сокол, Міша, Олександр Білошапка, Анна Шевченко, Дмитро Коваленко.
+
+Предмети у кожного студента СТРОГО такі: "ООП", "Основи філософських знань", "Математика".
+
+Додай оцінки (від 1 до 5). У когось зроби 4-5 оцінок, у когось спеціально 1-2 оцінки для перевірки логіки рейтингу.
+
+Файл 2: db_manager.py (Бізнес-логіка)
+Ядро програми. Жодного input() чи print(). Тільки чисті функції, які приймають аргументи і повертають дані/рядок статусу.
+
+Динамічний шлях до data.json через os.path.dirname(os.path.abspath(__file__)).
+
+Функції для дедлайнів: get_hot_deadlines() (повертає дедлайни, де до due_date залишилося alert_days або менше днів), get_all_deadlines(), add_deadline(subject, task, due_date, alert_days). Використовуй модуль datetime.
+
+Функція add_grade(student_name, subject, grade).
+
+Функція get_subject_rating(subject): розраховує середній бал (округлення до 2 знаків) ТІЛЬКИ якщо є мінімум 3 оцінки. Якщо оцінок 1 або 2, повертає рядок: "Не набрано мінімум оцінок (3) для розрахунку".
+
+Пошук нечутливий до регістру: ввід .strip().lower() порівнюється з ключами словника .lower() у циклі, але дані дістаються за оригінальним ключем.
+
+Файл 3: sync_sheets.py (Синхронізація з Google Таблицею)
+Скрипт для парсингу даних з таблиці за посиланням [https://docs.google.com/spreadsheets/d/1jUGjAlY-GWw7HXJMykaR1VatQ_g6vfw1sj6fCk354r4/export?format=csv](https://docs.google.com/spreadsheets/d/1jUGjAlY-GWw7HXJMykaR1VatQ_g6vfw1sj6fCk354r4/export?format=csv)
+
+ВАЖЛИВО: Використовуй тільки вбудовані модулі urllib.request та csv. Жодного pandas.
+
+Логіка оновлення дедлайнів: перед парсингом скрипт має повністю очистити список deadlines у data.json.
+
+Логіка парсингу CSV:
+
+Комірка A2 містить назву предмета (наприклад, "Основи філософських знань").
+
+Рядки 1 і 2 містять назви завдань.
+
+Рядок 4 містить дати дедлайнів (коли здавати). Збери дати з 4-го рядка і відповідні назви завдань. Запиши їх у data.json у форматі {"subject": назва_з_A2, "task": назва_завдання, "due_date": дата_з_4_рядка, "alert_days": 2}.
+
+Імена студентів починаються нижче (стовпець A). Під час парсингу студентів обов'язково ігноруй рядок, якщо в стовпці A написано назву предмета (щоб предмет не записався як студент).
+
+Файл 4: main_cli.py (Інтерфейс користувача)
+Консольне меню (while True). Імпортує db_manager та sync_sheets. Всі input() та print() знаходяться тут.
+
+Меню: 1. Показати всі дедлайни, 2. Додати дедлайн, 3. Додати оцінку, 4. Рейтинг з предмета, 5. Синхронізувати з Google Таблицею (викликає логіку з sync_sheets.py), 0. Вихід.
+
+При кожному показі меню (або при старті) викликається db_manager.get_hot_deadlines(). Якщо є гарячі дедлайни, виводиться блок "🔥 УВАГА! ДЕДЛАЙНИ, ЩО ГОРЯТЬ!".
+
+Напиши повний код для всіх 4 файлів. Додай коментарі українською.
